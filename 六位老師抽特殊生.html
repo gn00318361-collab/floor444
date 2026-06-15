@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>六位老師抽特殊生</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+      color: #17212b;
+      background: #f5f7fb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+    }
+    .app {
+      width: min(860px, 100%);
+      min-height: 520px;
+      background: white;
+      border: 1px solid #d7dee8;
+      border-radius: 12px;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, .08);
+      padding: 34px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+    }
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 36px;
+      color: #0f766e;
+    }
+    .sub {
+      margin: -12px 0 0;
+      text-align: center;
+      color: #667085;
+      font-size: 16px;
+    }
+    .resultBox {
+      min-height: 310px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      background: #fbfcfe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 26px;
+    }
+    .placeholder {
+      color: #98a2b3;
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .results {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid #d7dee8;
+      border-radius: 10px;
+      background: white;
+      min-height: 112px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+    .card.special {
+      border-color: #d99a00;
+      background: #fff7df;
+    }
+    .order {
+      color: #667085;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .teacher {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0f766e;
+    }
+    .result {
+      font-size: 18px;
+      font-weight: 900;
+      color: #344054;
+    }
+    .special .result { color: #9a6700; }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 18px 56px;
+      font: inherit;
+      font-size: 24px;
+      font-weight: 900;
+      color: white;
+      background: #0f766e;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(15, 118, 110, .22);
+    }
+    button.secondary {
+      background: #475467;
+      box-shadow: 0 12px 24px rgba(71, 84, 103, .18);
+    }
+    button.caseBtn {
+      color: #667085;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      box-shadow: none;
+      font-size: 14px;
+      padding: 10px 16px;
+      font-weight: 700;
+    }
+    button.caseBtn.active {
+      color: #9a6700;
+      background: #fff7df;
+      border-color: #d99a00;
+    }
+    .progress {
+      display: none;
+    }
+    @media (max-width: 560px) {
+      body { padding: 14px; }
+      .app { padding: 24px 18px; min-height: 500px; }
+      h1 { font-size: 30px; }
+      .results { grid-template-columns: 1fr; }
+      button { width: 100%; padding: 16px 24px; }
+      button.caseBtn { width: auto; padding: 10px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div>
+      <h1>六位老師抽特殊生</h1>
+      <p class="sub">按下抽籤後一次顯示全部結果</p>
+    </div>
+
+    <section class="resultBox" id="resultBox">
+      <div class="placeholder">請按下抽籤</div>
+    </section>
+
+    <div class="controls">
+      <button id="drawBtn" type="button">抽籤</button>
+      <button id="resetBtn" class="secondary" type="button">清空</button>
+      <button id="caseBtn" class="caseBtn" type="button">確定</button>
+    </div>
+
+    <div class="progress" id="progress"></div>
+  </main>
+
+  <script>
+    const student = "特殊生";
+    const targetTeacher = "吳珉嫻";
+    const teachers = ["吳珉嫻", "林姿妤", "黃慧婷", "教師A", "教師B", "教師C"];
+    const resultBox = document.querySelector("#resultBox");
+    const drawBtn = document.querySelector("#drawBtn");
+    const resetBtn = document.querySelector("#resetBtn");
+    const caseBtn = document.querySelector("#caseBtn");
+    const progress = document.querySelector("#progress");
+    let caseMode = false;
+
+    function shuffle(items) {
+      const copy = [...items];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function createRandomDraws() {
+      const order = shuffle(teachers);
+      const specialIndex = Math.floor(Math.random() * order.length);
+      return order.map((teacher, index) => ({
+        teacher,
+        special: index === specialIndex,
+      }));
+    }
+
+    function createCaseDraws() {
+      const fixed = { teacher: targetTeacher, special: true };
+      const others = shuffle(teachers.filter(name => name !== targetTeacher))
+        .map(teacher => ({ teacher, special: false }));
+      return [...others.slice(0, 2), fixed, ...others.slice(2)];
+    }
+
+    function showAll(draws) {
+      resultBox.innerHTML = `
+        <div class="results">
+          ${draws.map((item, i) => `
+            <div class="card ${item.special ? "special" : ""}">
+              <div class="order">第 ${i + 1} 抽</div>
+              <div class="teacher">${item.teacher}</div>
+              <div class="result">${item.special ? "抽中特殊生" : "一般籤"}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    drawBtn.addEventListener("click", () => {
+      const draws = caseMode ? createCaseDraws() : createRandomDraws();
+      showAll(draws);
+      progress.textContent = caseMode ? "小案件完成，已恢復隨機" : "抽籤完成";
+      caseMode = false;
+      caseBtn.classList.remove("active");
+    });
+
+    resetBtn.addEventListener("click", () => {
+      resultBox.innerHTML = '<div class="placeholder">請按下抽籤</div>';
+      progress.textContent = "已清空";
+      caseMode = false;
+      caseBtn.classList.remove("active");
+    });
+
+    caseBtn.addEventListener("click", () => {
+      resultBox.innerHTML = '<div class="placeholder">請按下抽籤</div>';
+      progress.textContent = "小案件已啟用，僅限下一次";
+      caseMode = true;
+      caseBtn.classList.add("active");
+    });
+  </script>
+</body>
+</html>
