@@ -117,20 +117,6 @@
       background: #475467;
       box-shadow: 0 12px 24px rgba(71, 84, 103, .18);
     }
-    button.caseBtn {
-      color: #667085;
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      box-shadow: none;
-      font-size: 14px;
-      padding: 10px 16px;
-      font-weight: 700;
-    }
-    button.caseBtn.active {
-      color: #9a6700;
-      background: #fff7df;
-      border-color: #d99a00;
-    }
     .progress {
       display: none;
     }
@@ -140,7 +126,6 @@
       h1 { font-size: 30px; }
       .results { grid-template-columns: 1fr; }
       button { width: 100%; padding: 16px 24px; }
-      button.caseBtn { width: auto; padding: 10px 16px; }
     }
   </style>
 </head>
@@ -158,7 +143,6 @@
     <div class="controls">
       <button id="drawBtn" type="button">抽籤</button>
       <button id="resetBtn" class="secondary" type="button">清空</button>
-      <button id="caseBtn" class="caseBtn" type="button">確定</button>
     </div>
 
     <div class="progress" id="progress"></div>
@@ -166,14 +150,11 @@
 
   <script>
     const student = "特殊生";
-    const targetTeacher = "吳珉嫻";
     const teachers = ["吳珉嫻", "林姿妤", "黃慧婷", "教師A", "教師B", "教師C"];
     const resultBox = document.querySelector("#resultBox");
     const drawBtn = document.querySelector("#drawBtn");
     const resetBtn = document.querySelector("#resetBtn");
-    const caseBtn = document.querySelector("#caseBtn");
     const progress = document.querySelector("#progress");
-    let caseMode = false;
 
     function shuffle(items) {
       const copy = [...items];
@@ -193,19 +174,11 @@
       }));
     }
 
-    function createCaseDraws() {
-      const fixed = { teacher: targetTeacher, special: true };
-      const others = shuffle(teachers.filter(name => name !== targetTeacher))
-        .map(teacher => ({ teacher, special: false }));
-      return [...others.slice(0, 2), fixed, ...others.slice(2)];
-    }
-
     function showAll(draws) {
       resultBox.innerHTML = `
         <div class="results">
           ${draws.map((item, i) => `
             <div class="card ${item.special ? "special" : ""}">
-              <div class="order">第 ${i + 1} 抽</div>
               <div class="teacher">${item.teacher}</div>
               <div class="result">${item.special ? "抽中特殊生" : "一般籤"}</div>
             </div>
@@ -215,25 +188,14 @@
     }
 
     drawBtn.addEventListener("click", () => {
-      const draws = caseMode ? createCaseDraws() : createRandomDraws();
+      const draws = createRandomDraws();
       showAll(draws);
-      progress.textContent = caseMode ? "小案件完成，已恢復隨機" : "抽籤完成";
-      caseMode = false;
-      caseBtn.classList.remove("active");
+      progress.textContent = "抽籤完成";
     });
 
     resetBtn.addEventListener("click", () => {
       resultBox.innerHTML = '<div class="placeholder">請按下抽籤</div>';
       progress.textContent = "已清空";
-      caseMode = false;
-      caseBtn.classList.remove("active");
-    });
-
-    caseBtn.addEventListener("click", () => {
-      resultBox.innerHTML = '<div class="placeholder">請按下抽籤</div>';
-      progress.textContent = "小案件已啟用，僅限下一次";
-      caseMode = true;
-      caseBtn.classList.add("active");
     });
   </script>
 </body>
